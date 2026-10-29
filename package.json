@@ -1,0 +1,16 @@
+{
+  "name": "zojatech-qa-demo",
+  "private": true,
+  "description": "QA automation demo: web (Playwright), API (Playwright + Postman/Newman), mobile (WebdriverIO + Appium), load (k6).",
+  "scripts": {
+    "test": "playwright test",
+    "test:web": "playwright test tests/web",
+    "test:api": "playwright test tests/api",
+    "report": "playwright show-report",
+    "newman": "newman run postman/booking-api.postman_collection.json --env-var bookerPass=%BOOKER_PASS%"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.56.1",
+    "newman": "6.2.1"
+  }
+}

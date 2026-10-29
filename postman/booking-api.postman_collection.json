@@ -1,0 +1,274 @@
+{
+  "info": {
+    "name": "Booking API demo (stand-in for a transfer API)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Auth, create, read back, authorisation, update, delete. Set bookerPass to the public demo password from https://restful-booker.herokuapp.com/apidoc."
+  },
+  "item": [
+    {
+      "name": "01 Auth: get a token",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base}}/auth",
+          "host": [
+            "{{base}}"
+          ],
+          "path": [
+            "auth"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"{{bookerPass}}\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"200\", () => pm.response.to.have.status(200));",
+              "const tok = pm.response.json().token; pm.test(\"token returned\", () => pm.expect(tok).to.be.a(\"string\").and.not.empty);",
+              "pm.collectionVariables.set(\"token\", tok);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 Create: 200, echoes the body, response under 2 s",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base}}/booking",
+          "host": [
+            "{{base}}"
+          ],
+          "path": [
+            "booking"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"firstname\": \"Ada\",\n  \"lastname\": \"Okafor\",\n  \"totalprice\": 12500,\n  \"depositpaid\": true,\n  \"bookingdates\": {\n    \"checkin\": \"2026-11-01\",\n    \"checkout\": \"2026-11-03\"\n  },\n  \"additionalneeds\": \"None\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"under 2 s\", () => pm.expect(pm.response.responseTime).to.be.below(2000));",
+              "const j = pm.response.json(); pm.collectionVariables.set(\"id\", j.bookingid);",
+              "pm.test(\"schema\", () => { pm.expect(j.bookingid).to.be.a(\"number\"); pm.expect(j.booking.totalprice).to.be.a(\"number\"); pm.expect(j.booking.bookingdates).to.have.keys(\"checkin\",\"checkout\"); });",
+              "pm.test(\"values echoed\", () => pm.expect(j.booking.firstname).to.eql(\"Ada\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 Read back: stored = sent",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base}}/booking/{{id}}",
+          "host": [
+            "{{base}}"
+          ],
+          "path": [
+            "booking",
+            "{{id}}"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"amount stored exactly\", () => pm.expect(pm.response.json().totalprice).to.eql(12500));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 Authorisation: update without token is 403",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base}}/booking/{{id}}",
+          "host": [
+            "{{base}}"
+          ],
+          "path": [
+            "booking",
+            "{{id}}"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"firstname\": \"Ada\",\n  \"lastname\": \"Okafor\",\n  \"totalprice\": 1,\n  \"depositpaid\": true,\n  \"bookingdates\": {\n    \"checkin\": \"2026-11-01\",\n    \"checkout\": \"2026-11-03\"\n  },\n  \"additionalneeds\": \"None\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"403\", () => pm.response.to.have.status(403));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 Update with token",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Cookie",
+            "value": "token={{token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base}}/booking/{{id}}",
+          "host": [
+            "{{base}}"
+          ],
+          "path": [
+            "booking",
+            "{{id}}"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"firstname\": \"Ada\",\n  \"lastname\": \"Okafor\",\n  \"totalprice\": 15000,\n  \"depositpaid\": true,\n  \"bookingdates\": {\n    \"checkin\": \"2026-11-01\",\n    \"checkout\": \"2026-11-03\"\n  },\n  \"additionalneeds\": \"None\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"updated\", () => pm.expect(pm.response.json().totalprice).to.eql(15000));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 Delete with token",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Cookie",
+            "value": "token={{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base}}/booking/{{id}}",
+          "host": [
+            "{{base}}"
+          ],
+          "path": [
+            "booking",
+            "{{id}}"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"201\", () => pm.response.to.have.status(201));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "07 Deleted record is 404",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base}}/booking/{{id}}",
+          "host": [
+            "{{base}}"
+          ],
+          "path": [
+            "booking",
+            "{{id}}"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"404\", () => pm.response.to.have.status(404));"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base",
+      "value": "https://restful-booker.herokuapp.com"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "id",
+      "value": ""
+    },
+    {
+      "key": "bookerPass",
+      "value": ""
+    }
+  ]
+}
